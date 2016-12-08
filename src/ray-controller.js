@@ -90,10 +90,10 @@ export default class RayController extends EventEmitter {
 
     } else {
       // If there's no gamepad, it might be Cardboard, magic window or desktop.
-      if (isMobile()) {
+      if (isMobile() || this.forceVRInteraction) {
         // Either Cardboard or magic window, depending on whether we are
         // presenting.
-        if (this.vrDisplay && this.vrDisplay.isPresenting) {
+        if (this.vrDisplay && this.vrDisplay.isPresenting || this.forceVRInteraction) {
           return InteractionModes.VR_0DOF;
         } else {
           return InteractionModes.TOUCH;
@@ -180,7 +180,19 @@ export default class RayController extends EventEmitter {
     this.emit('raydown');
 
     // Prevent synthetic mouse event from being created.
-    e.preventDefault();
+    if (!this.disabled) {
+      var target = e.target;
+      var isVRBtn = (target.className.length) && (target.className.indexOf('webvr-ui') > -1);
+      $(target).parents().each(function(i, el) {
+        if (el.className.length && el.className.indexOf('webvr-ui') > -1) {
+          isVRBtn = true;
+        }
+      });
+      if (!!isVRBtn) {
+        return;
+      }
+      e.preventDefault();
+    }
   }
 
   onTouchMove_(e) {
@@ -188,14 +200,18 @@ export default class RayController extends EventEmitter {
     this.updateDragDistance_();
 
     // Prevent synthetic mouse event from being created.
-    e.preventDefault();
+    if (!this.disabled) {
+      e.preventDefault();
+    }
   }
 
   onTouchEnd_(e) {
     this.endDragging_();
 
     // Prevent synthetic mouse event from being created.
-    e.preventDefault();
+    if (!this.disabled) {
+      e.preventDefault();
+    }
     this.isTouchActive = false;
   }
 
